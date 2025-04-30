@@ -1,0 +1,4 @@
+[submodule "littlefs"]
+    path = littlefs
+    url = https://github.com/bsg-external/littlefs
+    branch = dramfs

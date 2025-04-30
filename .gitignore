@@ -1,0 +1,9 @@
+autom4te.cache/
+config.log
+config.sub
+config.guess
+config.status
+Makefile
+*.o
+*.a
+*.swp

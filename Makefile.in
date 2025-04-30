@@ -1,0 +1,293 @@
+# @configure_input@
+
+SHELL := /bin/sh
+.DEFAULT_GOAL := all
+
+prefix := @prefix@
+host := @host@
+build := @build@
+target := @target@
+exec_prefix := @exec_prefix@
+libdir := @libdir@
+bindir := @bindir@
+includedir := @includedir@
+
+srcdir := @srcdir@
+builddir := @builddir@
+
+CC_FOR_BUILD := @CC_FOR_BUILD@
+
+CC := @CC@
+AR := @AR@
+SIZE := @SIZE@
+
+CFLAGS ?= @CFLAGS@ -std=c11 -pedantic -Wall
+CPPFLAGS ?= @CPPFLAGS@
+LDFLAGS ?= @LDFLAGS@
+
+multilib := @MULTILIB@
+
+libgloss_c_srcs := \
+	misc/traps.c \
+	misc/tls.c \
+	misc/main.c \
+	\
+	sys/sys_close.c \
+	sys/sys_execve.c \
+	sys/sys_exit.c \
+	sys/sys_fork.c \
+	sys/sys_fstat.c \
+	sys/sys_getpid.c \
+	sys/sys_gettimeofday.c \
+	sys/sys_isatty.c \
+	sys/sys_kill.c \
+	sys/sys_link.c \
+	sys/sys_lseek.c \
+	sys/sys_open.c \
+	sys/sys_read.c \
+	sys/sys_sbrk.c \
+	sys/sys_stat.c \
+	sys/sys_times.c \
+	sys/sys_unlink.c \
+	sys/sys_wait.c \
+	sys/sys_write.c \
+	\
+	dramfs/dramfs_fdtable.c \
+	dramfs/dramfs_fs.c \
+	\
+	littlefs/lfs.c \
+	littlefs/lfs_util.c \
+	littlefs/bd/lfs_bd.c
+
+libgloss_asm_srcs := \
+	misc/crt0.S \
+	misc/crtmain.S \
+	misc/init.S
+
+libgloss_hdrs := \
+	dramfs/dramfs_fdtable.h \
+	dramfs/dramfs_fs.h \
+	dramfs/dramfs_util.h \
+	dramfs/dramfs_intf.h \
+	\
+	littlefs/lfs.h \
+	littlefs/lfs_util.h \
+	littlefs/bd/lfs_bd.h \
+	encoding.h
+
+specs_newlib := $(srcdir)/util/dramfs.specs
+
+libgloss_lds := $(srcdir)/util/dramfs.ld
+
+# Additional files to install
+libgloss_data := \
+	$(specs_newlib) \
+	$(libgloss_lds)
+
+libgloss_libs :=
+libgloss_objs :=
+libgloss_install :=
+
+# $(1): subdirectory
+# $(2): variable uniquifier
+# $: additional compiler flags
+define libgloss
+
+libgloss$(2)_hdrs := $$(addprefix $$(builddir)/$(1)/,$$(libgloss_hdrs))
+libgloss$(2)_c_objs := $$(addprefix $$(builddir)/$(1)/,$$(libgloss_c_srcs:.c=.o))
+libgloss$(2)_asm_objs := $$(addprefix $$(builddir)/$(1)/,$$(libgloss_asm_srcs:.S=.o))
+libgloss$(2)_lib := $$(builddir)/$(1)/libgloss_dramfs.a
+
+libgloss$(2)_CFLAGS := $$(CFLAGS)
+libgloss$(2)_CFLAGS += -fno-common -fno-builtin -mcmodel=medany
+#libgloss$(2)_CFLAGS += -DLFS_NO_MALLOC -DLFS_NO_ASSERT
+libgloss$(2)_CFLAGS += -DLFS_NO_DEBUG -DLFS_NO_WARN -DLFS_NO_ERROR 
+libgloss$(2)_CFLAGS += -DLFS_NO_INTRINSICS
+libgloss$(2)_CFLAGS += -I$$(builddir)
+libgloss$(2)_CFLAGS += -I$$(builddir)/littlefs
+libgloss$(2)_CPPFLAGS := $$(CPPFLAGS)
+
+$$(libgloss$(2)_hdrs): $$(builddir)/$(1)/%.h: $$(srcdir)/%.h
+	@mkdir -p $$(dir $$@)
+	cp $$< $$@
+
+$$(libgloss$(2)_c_objs): $$(builddir)/$(1)/%.o: $$(srcdir)/%.c $$(libgloss$(2)_hdrs)
+	@mkdir -p $$(dir $$@)
+	$$(CC) $$(libgloss$(2)_CFLAGS) $ $$(libgloss$(2)_CPPFLAGS) -c -o $$@ $$<
+
+$$(libgloss$(2)_asm_objs): $$(builddir)/$(1)/%.o: $$(srcdir)/%.S $$(libgloss$(2)_hdrs)
+	@mkdir -p $$(dir $$@)
+	$$(CC) $$(libgloss$(2)_CFLAGS) $ $$(libgloss$(2)_CPPFLAGS) -D__ASSEMBLY__ -c -o $$@ $$<
+
+$$(libgloss$(2)_lib): $$(libgloss$(2)_c_objs) $$(libgloss$(2)_asm_objs)
+	$$(AR) rcs $$@ $$^
+
+.PHONY: libgloss($2)_install
+libgloss$(2)_install: $$(libgloss$(2)_lib) $$(libgloss_data)
+	install -m 644 -p -D -t $$(libdir)/$(1)/ $$^
+
+libgloss_objs += $$(libgloss$(2)_c_objs) $$(libgloss$(2)_asm_objs)
+libgloss_libs += $$(libgloss$(2)_lib)
+libgloss_install += libgloss$(2)_install
+
+endef
+
+dramfs_mklfs_c_srcs := \
+	dramfs/dramfs_mklfs.c \
+	dramfs/dramfs_util.c \
+	\
+	littlefs/lfs.c \
+	littlefs/lfs_util.c \
+	littlefs/bd/lfs_bd.c
+
+dramfs_mklfs_hdrs := \
+	dramfs/dramfs_fdtable.h \
+	dramfs/dramfs_fs.h \
+	dramfs/dramfs_util.h \
+	\
+	littlefs/lfs.h \
+	littlefs/lfs_util.h \
+	littlefs/bd/lfs_bd.h
+
+dramfs_mklfs_data :=
+
+dramfs_mklfs_bin :=
+dramfs_mklfs_objs :=
+dramfs_mklfs_install :=
+
+# $(1): subdirectory
+# $(2): variable uniquifier
+# $: additional compiler flags
+define dramfs_mklfs
+
+dramfs_mklfs$(2)_c_objs := $$(addprefix $$(builddir)/$(1)/,$$(dramfs_mklfs_c_srcs:.c=.o))
+dramfs_mklfs$(2)_hdrs := $$(addprefix $$(builddir)/$(1)/,$$(dramfs_mklfs_hdrs))
+dramfs_mklfs$(2)_bin := $$(builddir)/$(1)/dramfs_mklfs
+
+dramfs_mklfs$(2)_CFLAGS := $$(CFLAGS)
+dramfs_mklfs$(2)_CFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE
+dramfs_mklfs$(2)_CFLAGS += -I$$(builddir)/$(1)
+dramfs_mklfs$(2)_CFLAGS += -I$$(builddir)/$(1)/littlefs
+dramfs_mklfs$(2)_CFLAGS += -I$$(builddir)/$(1)/dramfs
+dramfs_mklfs$(2)_CPPFLAGS := $$(CPPFLAGS)
+
+$$(dramfs_mklfs$(2)_hdrs): $$(builddir)/$(1)/%.h: $$(srcdir)/%.h
+	@mkdir -p $$(dir $$@)
+	cp $$< $$@
+
+$$(dramfs_mklfs$(2)_c_objs): $$(builddir)/$(1)/%.o: $$(srcdir)/%.c $$(dramfs_mklfs_hdrs)
+	@mkdir -p $$(dir $$@)
+	$(CC_FOR_BUILD) $$(dramfs_mklfs_CFLAGS) $ $$(dramfs_mklfs_CPPFLAGS) -c -o $$@ $$<
+
+$$(dramfs_mklfs$(2)_bin): $$(dramfs_mklfs$(2)_c_objs)
+	$(CC_FOR_BUILD) $$(dramfs_mklfs_CFLAGS) $ $$(dramfs_mklfs_CPPFLAGS) -o $$@ $$^
+
+.PHONY: dramfs_mklfs$(2)_install
+dramfs_mklfs$(2)_install: $$(dramfs_mklfs$(2)_bin) $$(dramfs_mklfs_data)
+	install -m 755 -p -D -t $$(bindir) $$^
+
+dramfs_mklfs_objs := $$(dramfs_mklfs$(2)_c_objs)
+dramfs_mklfs_install := dramfs_mklfs$(2)_install
+dramfs_mklfs_bin := $$(dramfs_mklfs$(2)_bin)
+
+endef
+
+define libgloss_multilib
+$(eval arch := $(patsubst %/,%,$(dir $(1))))
+$(eval abi := $(notdir $(1)))
+$(call libgloss,$(1),_$(arch)_$(abi),-march=$(arch) -mabi=$(abi))
+endef
+
+$(eval $(call libgloss))
+$(foreach subdir,$(multilib),$(eval $(call libgloss_multilib,$(subdir))))
+
+.PHONY: libgloss
+libgloss: $(libgloss_libs)
+
+# Verify that libdir is part of the compiler library search paths
+searchdirs = $(shell $(CC) -print-search-dirs | sed -n '/^libraries: =/{s///;s/:/ /g;p;}')
+
+$(eval $(call dramfs_mklfs,$(build)))
+
+.PHONY: dramfs_mklfs
+dramfs_mklfs: $(dramfs_mklfs_bin)
+
+.PHONY: install
+install: $(libgloss_install) $(dramfs_mklfs_install)
+	$(if $(filter $(realpath $(libdir)),\
+	$(foreach d,$(call searchdirs),$(realpath $(d)))),,\
+	$(error libdir is not in $(CC) library search path: $(libdir)))
+
+
+#
+# Test programs
+#
+
+check_bins := # test binaries
+
+# $(1): output file
+# $(2): source files
+# $(3): txt files
+# $(4): simulator
+define check
+
+check$(1)_bin := $$(addprefix $$(builddir)/check-$(1)/,$$(addsuffix .riscv,$(1)))
+ifneq ($(3),)
+check$(1)_lfs := $$(addprefix $$(builddir)/check-$(1)/,$$(addsuffix _lfs.c,$(1)))
+$$(check$(1)_lfs): $(3)
+	@mkdir -p $$(dir $$@)
+	@cp $$^ .
+	$$(dramfs_mklfs_bin) $$(check$(1)_dramfs_mklfs_flags) $$(^F) > $$@
+endif
+
+check$(1)_dramfs_intf := $(srcdir)/tests/dramfs_intf_$(4).c
+
+check$(1)_dramfs_mklfs_flags := 128 64
+check$(1)_srcs := $(2) $$(check$(1)_lfs) $$(check$(1)_dramfs_intf)
+
+$$(check$(1)_bin): LDFLAGS += -L $$(builddir)/$$(host)
+$$(check$(1)_bin): $$(check$(1)_srcs) $$(libgloss_libs) $$(libgloss_lds)
+	@mkdir -p $$(dir $$@)
+	$$(CC) $$(CFLAGS) $(foreach f,$$(specs_newlib),-specs=$(f)) $$(LDFLAGS) \
+	-I$$(builddir) -I$$(builddir)/littlefs \
+	-T $$(libgloss_lds) -Wl,-Map=$$@.map -o $$@ $$(check$(1)_srcs)
+	$$(SIZE) $$@
+
+check_bins += $$(check$(1)_bin)
+
+endef
+
+hello_src := $(srcdir)/tests/hello.c
+hello_files :=
+
+hello_fs_src := $(srcdir)/tests/hello.c
+hello_fs_files := $(srcdir)/tests/hello.txt
+
+hello_argv_src := $(srcdir)/tests/hello.c $(srcdir)/tests/args.c
+hello_argv_files :=
+
+# Manual equivalent:
+#	$(CC) $(CFLAGS) -mcmodel=medany -nostdlib -nostartfiles -T htif.ld \
+#	hello.c -Wl,--start-group -lc -lgloss_dramfs -Wl,--end-group -lgcc
+#
+$(eval $(call check,hello-dromajo,$(hello_src),$(hello_files),dromajo))
+$(eval $(call check,hello_fs-dromajo,$(hello_src),$(hello_fs_files),dromajo))
+$(eval $(call check,hello_argv-dromajo,$(hello_argv_src),$(hello_argv_files),dromajo))
+
+$(eval $(call check,hello-spike,$(hello_src),$(hello_files),spike))
+$(eval $(call check,hello_fs-spike,$(hello_src),$(hello_fs_files),spike))
+$(eval $(call check,hello_argv-spike,$(hello_argv_src),$(hello_argv_files),spike))
+
+.PHONY: all
+all: libgloss dramfs_mklfs
+
+.PHONY: check
+check: $(check_bins)
+
+.PHONY: clean
+clean:
+	rm -f -- $(libgloss_libs) $(libgloss_objs) $(check_bins) $(addsuffix .map,$(check_bins))
+	rm -f -- $(dramfs_mklfs_bin) $(dramfs_mklfs_objs)
+
+# Disable built-in suffix rules
+.SUFFIXES:
