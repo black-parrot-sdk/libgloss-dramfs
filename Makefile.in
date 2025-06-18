@@ -100,7 +100,7 @@ libgloss$(2)_lib := $$(builddir)/$(1)/libgloss_dramfs.a
 
 libgloss$(2)_CFLAGS := $$(CFLAGS)
 libgloss$(2)_CFLAGS += -fno-common -fno-builtin -mcmodel=medany
-#libgloss$(2)_CFLAGS += -DLFS_NO_MALLOC -DLFS_NO_ASSERT
+libgloss$(2)_CFLAGS += -DLFS_NO_MALLOC -DLFS_NO_ASSERT
 libgloss$(2)_CFLAGS += -DLFS_NO_DEBUG -DLFS_NO_WARN -DLFS_NO_ERROR 
 libgloss$(2)_CFLAGS += -DLFS_NO_INTRINSICS
 libgloss$(2)_CFLAGS += -I$$(builddir)
@@ -124,7 +124,10 @@ $$(libgloss$(2)_lib): $$(libgloss$(2)_c_objs) $$(libgloss$(2)_asm_objs)
 
 .PHONY: libgloss($2)_install
 libgloss$(2)_install: $$(libgloss$(2)_lib) $$(libgloss_data)
-	install -m 644 -p -D -t $$(libdir)/$(1)/ $$^
+	install -m 644 -p -D -t $$(libdir)/$(1)/ $$(libgloss$(2)_lib) $$(libgloss_data)
+	rsync -a --include='*/' --include='*.h' --exclude='*' $$(srcdir)/encoding.h $$(includedir)/encoding.h
+	rsync -a --include='*/' --include='*.h' --exclude='*' $$(srcdir)/littlefs/ $$(includedir)/littlefs/
+	rsync -a --include='*/' --include='*.h' --exclude='*' $$(srcdir)/dramfs/ $$(includedir)/dramfs/
 
 libgloss_objs += $$(libgloss$(2)_c_objs) $$(libgloss$(2)_asm_objs)
 libgloss_libs += $$(libgloss$(2)_lib)
