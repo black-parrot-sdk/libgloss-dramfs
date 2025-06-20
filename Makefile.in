@@ -128,6 +128,7 @@ libgloss$(2)_install: $$(libgloss$(2)_lib) $$(libgloss_data)
 	rsync -a --include='*/' --include='*.h' --exclude='*' $$(srcdir)/encoding.h $$(includedir)/encoding.h
 	rsync -a --include='*/' --include='*.h' --exclude='*' $$(srcdir)/littlefs/ $$(includedir)/littlefs/
 	rsync -a --include='*/' --include='*.h' --exclude='*' $$(srcdir)/dramfs/ $$(includedir)/dramfs/
+	find $$(includedir) -name "*.h" -exec sed -i 's/include "lfs.h"/include <littlefs/lfs.h>' {} \;
 
 libgloss_objs += $$(libgloss$(2)_c_objs) $$(libgloss$(2)_asm_objs)
 libgloss_libs += $$(libgloss$(2)_lib)
