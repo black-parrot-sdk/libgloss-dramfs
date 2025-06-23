@@ -2,9 +2,7 @@
 #include <dramfs/dramfs_fs.h>
 #include <unistd.h>
 
-dramfs_fd_entry_t *dramfs_fdtable __attribute__((weak)) = NULL;
-
-#include <stdio.h>
+dramfs_fd_entry_t *dramfs_fdtable __attribute__((weak,used)) = NULL;
 
 int dramfs_check_fd(int fd) {
   if (fd == STDIN_FILENO || fd == STDOUT_FILENO || fd == STDERR_FILENO) {

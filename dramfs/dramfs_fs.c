@@ -6,9 +6,9 @@
 #include <unistd.h>
 
 // Globals used by internal dramfs structures
-__attribute__((weak)) uint8_t *lfs_ptr = NULL;
-__attribute__((weak)) lfs_t dramfs_fs = {0};
-__attribute__((weak)) struct lfs_config dramfs_fs_cfg = {0};
+__attribute__((weak,used)) uint8_t *lfs_ptr = NULL;
+__attribute__((weak,used)) lfs_t dramfs_fs = {0};
+__attribute__((weak,used)) struct lfs_config dramfs_fs_cfg = {0};
 
 // Init routine for Newlib FS
 int dramfs_fs_init(void) {
