@@ -2,12 +2,17 @@ AC_INIT([libgloss-dramfs], [0.1])
 
 AC_PROG_CC
 AC_CHECK_TOOL([AR], [ar])
+AC_CHECK_TOOL([LD], [ld])
 AC_CHECK_TOOL([SIZE], [size])
 
 AC_CANONICAL_HOST
 AC_SUBST([host])
 AC_SUBST([build])
 AC_SUBST([target])
+
+AC_SUBST([AR])
+AC_SUBST([LD])
+AC_SUBST([SIZE])
 
 AC_ARG_VAR([CC_FOR_BUILD], [Build system C compiler])
 AC_CHECK_PROGS([CC_FOR_BUILD], [gcc cc])

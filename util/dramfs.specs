@@ -2,6 +2,7 @@
 # -mcmodel=medany -Wl,--start-group -lc -lgloss_dramfs -Wl,--end-group -lgcc -static -nostartfiles -dT dramfs.ld
 
 %rename cc1 dramfs_cc1
+%rename cc1plus dramfs_cc1plus
 %rename lib dramfs_lib
 %rename link dramfs_link
 %rename startfile dramfs_startfile
@@ -9,6 +10,9 @@
 
 *cc1:
 %(dramfs_cc1) -mcmodel=medany
+
+*cc1plus:
+%(dramfs_cc1plus) -mcmodel=medany
 
 *lib:
 --start-group -lc %{!specs=nosys.specs:-lgloss_dramfs} --end-group
@@ -19,7 +23,7 @@
 %(dramfs_link) %:replace-outfile(-lgloss -lgloss_dramfs) -dT dramfs.ld%s -static
 
 *startfile:
-
+dramfs_crt0.o%s
 
 *endfile:
 

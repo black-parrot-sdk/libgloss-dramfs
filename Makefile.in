@@ -19,6 +19,7 @@ CC_FOR_BUILD := @CC_FOR_BUILD@
 
 CC := @CC@
 AR := @AR@
+LD := @LD@
 SIZE := @SIZE@
 
 CFLAGS ?= @CFLAGS@ -std=c11 -pedantic -Wall
@@ -27,11 +28,17 @@ LDFLAGS ?= @LDFLAGS@
 
 multilib := @MULTILIB@
 
-libgloss_c_srcs := \
-	misc/traps.c \
+dramfs_crt_c_srcs := \
 	misc/tls.c \
-	misc/main.c \
-	\
+	misc/traps.c \
+	misc/main.c
+
+dramfs_crt_asm_srcs := \
+	misc/crt0.S \
+	misc/crtmain.S \
+	misc/init.S
+
+libgloss_c_srcs := \
 	sys/sys_close.c \
 	sys/sys_execve.c \
 	sys/sys_exit.c \
@@ -60,11 +67,6 @@ libgloss_c_srcs := \
 	littlefs/lfs_util.c \
 	littlefs/bd/lfs_bd.c
 
-libgloss_asm_srcs := \
-	misc/crt0.S \
-	misc/crtmain.S \
-	misc/init.S
-
 libgloss_hdrs := \
 	dramfs/dramfs_fdtable.h \
 	dramfs/dramfs_fs.h \
@@ -91,12 +93,11 @@ libgloss_install :=
 
 # $(1): subdirectory
 # $(2): variable uniquifier
-# $: additional compiler flags
+# $(3): additional compiler flags
 define libgloss
 
 libgloss$(2)_hdrs := $$(addprefix $$(builddir)/$(1)/,$$(libgloss_hdrs))
 libgloss$(2)_c_objs := $$(addprefix $$(builddir)/$(1)/,$$(libgloss_c_srcs:.c=.o))
-libgloss$(2)_asm_objs := $$(addprefix $$(builddir)/$(1)/,$$(libgloss_asm_srcs:.S=.o))
 libgloss$(2)_lib := $$(builddir)/$(1)/libgloss_dramfs.a
 
 libgloss$(2)_CFLAGS := $$(CFLAGS)
@@ -113,28 +114,62 @@ $$(libgloss$(2)_hdrs): $$(builddir)/$(1)/%.h: $$(srcdir)/%.h
 
 $$(libgloss$(2)_c_objs): $$(builddir)/$(1)/%.o: $$(srcdir)/%.c $$(libgloss$(2)_hdrs)
 	@mkdir -p $$(dir $$@)
-	$$(CC) $$(libgloss$(2)_CFLAGS) $ $$(libgloss$(2)_CPPFLAGS) -c -o $$@ $$<
+	$$(CC) $$(libgloss$(2)_CFLAGS) $(3) $$(libgloss$(2)_CPPFLAGS) -c -o $$@ $$<
 
-$$(libgloss$(2)_asm_objs): $$(builddir)/$(1)/%.o: $$(srcdir)/%.S $$(libgloss$(2)_hdrs)
-	@mkdir -p $$(dir $$@)
-	$$(CC) $$(libgloss$(2)_CFLAGS) $ $$(libgloss$(2)_CPPFLAGS) -D__ASSEMBLY__ -c -o $$@ $$<
-
-$$(libgloss$(2)_lib): $$(libgloss$(2)_c_objs) $$(libgloss$(2)_asm_objs)
+$$(libgloss$(2)_lib): $$(libgloss$(2)_c_objs)
 	$$(AR) rcs $$@ $$^
 
-.PHONY: libgloss($2)_install
+.PHONY: libgloss$(2)_install
 libgloss$(2)_install: $$(libgloss$(2)_lib) $$(libgloss_data)
-	install -m 644 -p -D -t $$(libdir)/$(1)/ $$(libgloss$(2)_lib) $$(libgloss_data)
+	install -m 644 -p -D -t $$(libdir)/$(1)/ $$^
 	rsync -a --include='*/' --include='*.h' --exclude='*' $$(srcdir)/encoding.h $$(includedir)/encoding.h
 	rsync -a --include='*/' --include='*.h' --exclude='*' $$(srcdir)/littlefs/ $$(includedir)/littlefs/
 	rsync -a --include='*/' --include='*.h' --exclude='*' $$(srcdir)/dramfs/ $$(includedir)/dramfs/
 	find $$(includedir) -name "*.h" -exec sed -i 's^include "lfs.h"^include <littlefs/lfs.h>^g' {} \;
 
-libgloss_objs += $$(libgloss$(2)_c_objs) $$(libgloss$(2)_asm_objs)
+libgloss_objs += $$(libgloss$(2)_c_objs)
 libgloss_libs += $$(libgloss$(2)_lib)
 libgloss_install += libgloss$(2)_install
 
 endef
+
+# $(1): subdirectory
+# $(2): variable uniquifier
+# $(3): additional compiler flags
+define dramfs_crt
+
+dramfs_crt$(2)_c_objs := $$(addprefix $$(builddir)/$(1)/,$$(dramfs_crt_c_srcs:.c=.o))
+dramfs_crt$(2)_asm_objs := $$(addprefix $$(builddir)/$(1)/,$$(dramfs_crt_asm_srcs:.S=.o))
+dramfs_crt$(2)_obj := $$(builddir)/$(1)/dramfs_crt0.o
+
+dramfs_crt$(2)_CFLAGS := $$(CFLAGS)
+dramfs_crt$(2)_CFLAGS += -fno-common -fno-builtin -mcmodel=medany
+dramfs_crt$(2)_CFLAGS += -I$$(builddir)
+dramfs_crt$(2)_CPPFLAGS := $$(CPPFLAGS)
+
+$$(dramfs_crt$(2)_c_objs): $$(builddir)/$(1)/%.o: $$(srcdir)/%.c
+	@mkdir -p $$(dir $$@)
+	$$(CC) $$(dramfs_crt$(2)_CFLAGS) $(3) $$(dramfs_crt$(2)_CPPFLAGS) -c -o $$@ $$<
+
+$$(dramfs_crt$(2)_asm_objs): $$(builddir)/$(1)/%.o: $$(srcdir)/%.S
+	@mkdir -p $$(dir $$@)
+	$$(CC) $$(dramfs_crt$(2)_CFLAGS) $(3) $$(dramfs_crt$(2)_CPPFLAGS) -D__ASSEMBLY__ -c -o $$@ $$<
+
+$$(dramfs_crt$(2)_obj): $$(dramfs_crt$(2)_c_objs) $$(dramfs_crt$(2)_asm_objs)
+	$$(LD) -r -o $$@ $$^
+
+.PHONY: dramfs_crt$(2)_install
+dramfs_crt$(2)_install: $$(dramfs_crt$(2)_obj)
+	install -m 644 -p -D -t $$(libdir)/$(1)/ $$^
+
+dramfs_crt_objs += $$(dramfs_crt$(2)_obj)
+dramfs_crt_install += dramfs_crt$(2)_install
+
+endef
+
+$(eval $(call dramfs_crt))
+.PHONY: dramfs_crt
+dramfs_crt: $(dramfs_crt_objs)
 
 dramfs_mklfs_c_srcs := \
 	dramfs/dramfs_mklfs.c \
@@ -217,7 +252,7 @@ $(eval $(call dramfs_mklfs,$(build)))
 dramfs_mklfs: $(dramfs_mklfs_bin)
 
 .PHONY: install
-install: $(libgloss_install) $(dramfs_mklfs_install)
+install: $(libgloss_install) $(dramfs_crt_install) $(dramfs_mklfs_install)
 	$(if $(filter $(realpath $(libdir)),\
 	$(foreach d,$(call searchdirs),$(realpath $(d)))),,\
 	$(error libdir is not in $(CC) library search path: $(libdir)))
@@ -256,6 +291,7 @@ $$(check$(1)_bin): $$(check$(1)_srcs) $$(libgloss_libs) $$(libgloss_lds)
 	-I$$(builddir) -I$$(builddir)/littlefs \
 	-T $$(libgloss_lds) -Wl,-Map=$$@.map -o $$@ $$(check$(1)_srcs)
 	$$(SIZE) $$@
+	$(4) $$@ &> $$@.out
 
 check_bins += $$(check$(1)_bin)
 
@@ -283,7 +319,7 @@ $(eval $(call check,hello_fs-spike,$(hello_src),$(hello_fs_files),spike))
 $(eval $(call check,hello_argv-spike,$(hello_argv_src),$(hello_argv_files),spike))
 
 .PHONY: all
-all: libgloss dramfs_mklfs
+all: libgloss dramfs_crt dramfs_mklfs
 
 .PHONY: check
 check: $(check_bins)
