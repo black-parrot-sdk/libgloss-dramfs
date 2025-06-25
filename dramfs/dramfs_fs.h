@@ -14,6 +14,6 @@ extern lfs_t dramfs_fs;
 extern struct lfs_config dramfs_fs_cfg;
 
 // LFS init routine: Should be called before calling main
-int dramfs_fs_init(void);
+void dramfs_fs_init(void) __attribute__((constructor));
 
 #endif  // DRAMFS_FS_H

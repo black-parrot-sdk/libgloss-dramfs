@@ -129,9 +129,6 @@ _start:
     call atexit
     call __libc_init_array
 
-    /* Initialize the file system */
-    call dramfs_fs_init
-
     /* Call main function */
     tail _start_main
 
