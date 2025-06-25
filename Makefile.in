@@ -188,8 +188,6 @@ dramfs_mklfs_hdrs := \
 	littlefs/lfs_util.h \
 	littlefs/bd/lfs_bd.h
 
-dramfs_mklfs_data :=
-
 dramfs_mklfs_bin :=
 dramfs_mklfs_objs :=
 dramfs_mklfs_install :=
@@ -224,6 +222,7 @@ $$(dramfs_mklfs$(2)_bin): $$(dramfs_mklfs$(2)_c_objs)
 .PHONY: dramfs_mklfs$(2)_install
 dramfs_mklfs$(2)_install: $$(dramfs_mklfs$(2)_bin) $$(dramfs_mklfs_data)
 	install -m 755 -p -D -t $$(bindir) $$^
+	ln -nsf $$(bindir)/$$(<F) $$(dir $$(shell which $$(CC)))/$$(host)-$$(<F)
 
 dramfs_mklfs_objs := $$(dramfs_mklfs$(2)_c_objs)
 dramfs_mklfs_install := dramfs_mklfs$(2)_install
