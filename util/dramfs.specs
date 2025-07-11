@@ -1,5 +1,3 @@
-# Equivalent to gcc options:
-# -mcmodel=medany -Wl,--start-group -lc -lgloss_dramfs -Wl,--end-group -lgcc -static -nostartfiles -dT dramfs.ld
 
 %rename cc1 dramfs_cc1
 %rename cc1plus dramfs_cc1plus
@@ -23,8 +21,8 @@
 %(dramfs_link) %:replace-outfile(-lgloss -lgloss_dramfs) -dT dramfs.ld%s -static
 
 *startfile:
-dramfs_crt0.o%s
+crtbegin.o%s dramfs_crt0.o%s
 
 *endfile:
-
+crtend.o%s
 
