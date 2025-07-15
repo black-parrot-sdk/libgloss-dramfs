@@ -36,7 +36,6 @@ dramfs_crt_c_srcs := \
 dramfs_crt_asm_srcs := \
 	misc/crt0.S \
 	misc/crtmain.S \
-	misc/init.S
 
 libgloss_c_srcs := \
 	sys/sys_close.c \
@@ -102,6 +101,7 @@ libgloss$(2)_lib := $$(builddir)/$(1)/libgloss_dramfs.a
 
 libgloss$(2)_CFLAGS := $$(CFLAGS)
 libgloss$(2)_CFLAGS += -fno-common -fno-builtin -mcmodel=medany
+libgloss$(2)_CFLAGS += -nostdlib -nostartfiles -mstrict-align
 libgloss$(2)_CFLAGS += -DLFS_NO_DEBUG -DLFS_NO_WARN -DLFS_NO_ERROR -DLFS_NO_ASSERT
 libgloss$(2)_CFLAGS += -DLFS_NO_INTRINSICS
 libgloss$(2)_CFLAGS += -I$$(builddir)
@@ -144,6 +144,7 @@ dramfs_crt$(2)_obj := $$(builddir)/$(1)/dramfs_crt0.o
 
 dramfs_crt$(2)_CFLAGS := $$(CFLAGS)
 dramfs_crt$(2)_CFLAGS += -fno-common -fno-builtin -mcmodel=medany
+dramfs_crt$(2)_CFLAGS += -nostdlib -nostartfiles -mstrict-align
 dramfs_crt$(2)_CFLAGS += -I$$(builddir)
 dramfs_crt$(2)_CPPFLAGS := $$(CPPFLAGS)
 

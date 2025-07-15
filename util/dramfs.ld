@@ -9,7 +9,8 @@ SECTIONS
     /* Keep under a power of 2 to reserve space for TCB */
     PROVIDE (__stack_size_min = 24K);
 
-    .text : {
+    . = ALIGN(8);
+    .text : ALIGN (8) {
         *(.text.init)
         *(.text.unlikely .text.unlikely.*)
         *(.text.startup .text.startup.*)
@@ -19,7 +20,8 @@ SECTIONS
     PROVIDE (_etext = .);
 
     /* Static Thread Local Storage template */
-    .tdata : {
+    . = ALIGN(8);
+    .tdata : ALIGN (8) {
         PROVIDE_HIDDEN (__tdata_start = .);
         *(.tdata .tdata.*)
         *(.gnu.linkonce.td.*)
@@ -27,7 +29,8 @@ SECTIONS
     }
     PROVIDE (__tdata_size = SIZEOF (.tdata));
 
-    .tbss (NOLOAD) : {
+    . = ALIGN(8);
+    .tbss (NOLOAD) : ALIGN(8) {
         PROVIDE_HIDDEN (__tbss_start = .);
         PROVIDE_HIDDEN (__tbss_offset = ABSOLUTE (__tbss_start - __tdata_start));
         *(.tbss .tbss.*)
@@ -37,59 +40,51 @@ SECTIONS
     }
     PROVIDE (__tbss_size = SIZEOF (.tbss));
 
-    .rodata : {
+    . = ALIGN(8);
+    .rodata : ALIGN(8) {
         *(.rodata .rodata.*)
         *(.gnu.linkonce.r.*)
     }
 
-    .preinit_array : {
+    . = ALIGN(8);
+    .preinit_array : ALIGN (8) {
         PROVIDE_HIDDEN (__preinit_array_start = .);
         KEEP (*(.preinit_array))
         PROVIDE_HIDDEN (__preinit_array_end = .);
     }
 
-    .init_array : {
+    . = ALIGN(8);
+    .init_array : ALIGN (8) {
         PROVIDE_HIDDEN (__init_array_start = .);
         KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
         KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
         PROVIDE_HIDDEN (__init_array_end = .);
     }
 
-    .fini_array : {
+    . = ALIGN(8);
+    .fini_array : ALIGN (8) {
         PROVIDE_HIDDEN (__fini_array_start = .);
         KEEP (*(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*)))
         KEEP (*(.fini_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .dtors))
         PROVIDE_HIDDEN (__fini_array_end = .);
     }
 
-    .ctors : {
-        KEEP (*crtbegin.o(.ctors))
-        KEEP (*crtbegin?.o(.ctors))
-        KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o) .ctors))
-        KEEP (*(SORT(.ctors.*)))
-        KEEP (*(.ctors))
-    }
+    . = ALIGN(8);
+    .eh_frame_hdr     : ALIGN (8) { *(.eh_frame_hdr) *(.eh_frame_entry .eh_frame_entry.*) }
+    .eh_frame         : ALIGN (8) { KEEP (*(.eh_frame)) *(.eh_frame.*) }
+    .gcc_except_table : ALIGN (8) { *(.gcc_except_table .gcc_except_table.*) }
+    .gnu_extab        : ALIGN (8) { *(.gnu_extab) }
+    .exception_ranges : ALIGN (8) { *(.exception_ranges*) }
+    .jcr              : ALIGN (8) { KEEP (*(.jcr))       }
 
-    .dtors : {
-        KEEP (*crtbegin.o(.dtors))
-        KEEP (*crtbegin?.o(.dtors))
-        KEEP (*(EXCLUDE_FILE (*crtend.o *crtend?.o) .dtors))
-        KEEP (*(SORT(.dtors.*)))
-        KEEP (*(.dtors))
-    }
-
-    .eh_frame_hdr     : { *(.eh_frame_hdr) *(.eh_frame_entry .eh_frame_entry.*) }
-    .eh_frame         : { KEEP (*(.eh_frame)) *(.eh_frame.*) }
-    .gcc_except_table : { *(.gcc_except_table .gcc_except_table.*) }
-    .gnu_extab        : { *(.gnu_extab) }
-    .exception_ranges : { *(.exception_ranges*) }
-
+    . = ALIGN(8);
     .data : ALIGN (8) {
         *(.data)
         *(.gnu.linkonce.d.*)
     }
 
-    .sdata : {
+    . = ALIGN(8);
+    .sdata : ALIGN(8) {
         PROVIDE (__global_pointer$ = . + 0x800);
         *(.sdata .sdata.*)
         *(.gnu.linkonce.s.*)
@@ -100,8 +95,8 @@ SECTIONS
         *(.srodata .srodata.*)
     }
 
+    . = ALIGN(8);
     PROVIDE (_edata = .);
-
     .bss : ALIGN (8) {
         PROVIDE_HIDDEN (__bss_start = .);
         *(.sbss .sbss.*)

@@ -27,12 +27,6 @@ _start_secondary:
 __boot_sync:
     .word 0
 
-.section .data
-.global __dso_handle
-.weak __dso_handle
-__dso_handle:
-    .long   0
-
 .section .rodata
 .align 3
 .weak __argc

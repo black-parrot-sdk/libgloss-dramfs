@@ -21,7 +21,7 @@
 %(dramfs_link) %:replace-outfile(-lgloss -lgloss_dramfs) -dT dramfs.ld%s -static
 
 *startfile:
-crtbegin.o%s dramfs_crt0.o%s
+dramfs_crt0.o%s crtbegin.o%s
 
 *endfile:
 crtend.o%s
