@@ -3,6 +3,7 @@
 #include <dramfs/dramfs_intf.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <errno.h>
 
 /* Read from a file.  */
 ssize_t _read(int fd, void *ptr, size_t len) {
@@ -32,6 +33,7 @@ ssize_t _read(int fd, void *ptr, size_t len) {
   }
 
   if (dramfs_check_fd(fd) < 0) {
+    errno = EBADF;
     return -1;
   }
 

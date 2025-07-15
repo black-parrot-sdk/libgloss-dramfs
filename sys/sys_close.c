@@ -1,6 +1,7 @@
 #include <dramfs/dramfs_fdtable.h>
 #include <dramfs/dramfs_fs.h>
 #include <unistd.h>
+#include <errno.h>
 
 /* Close a file.  */
 int _close(int fd) {
@@ -9,8 +10,14 @@ int _close(int fd) {
   }
 
   if (dramfs_check_fd(fd) < 0) {
+    errno = EBADF;
     return -1;
   }
 
-  return dramfs_free_fd(fd);
+  if (dramfs_free_fd(fd) < 0) {
+    errno = EBADF;
+    return -1;
+  }
+
+  return 0;
 }

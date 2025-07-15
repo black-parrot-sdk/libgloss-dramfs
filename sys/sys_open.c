@@ -1,6 +1,7 @@
 #include <dramfs/dramfs_fdtable.h>
 #include <dramfs/dramfs_fs.h>
 #include <fcntl.h>
+#include <errno.h>
 
 /* Open a file.  */
 int _open(const char *name, int flags, int mode) {
@@ -18,6 +19,7 @@ int _open(const char *name, int flags, int mode) {
   lfs_flags |= (flags & O_NONBLOCK) ? LFS_O_NONBLOCK : 0;
 
   if (fd < 0) {
+    errno = ENOENT;
     return -1;
   } else {
     lfs_file_t *fptr = dramfs_get_file(fd);
@@ -25,6 +27,7 @@ int _open(const char *name, int flags, int mode) {
     int ret = lfs_file_open(&dramfs_fs, fptr, name, lfs_flags);
 
     if (ret < 0) {
+      errno = ENOENT;
       return -1;
     } else {
       return fd;

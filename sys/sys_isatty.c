@@ -2,4 +2,8 @@
    other minimal implementations, which only support output to stdout,
    this minimal implementation is suggested by the newlib docs.  */
 
-int _isatty(int file) { return 1; }
+#include <unistd.h>
+
+int _isatty(int file) {
+    return (file == STDOUT_FILENO || file == STDERR_FILENO);
+}

@@ -1,21 +1,23 @@
-// Dynamic allocation in the dram
-// TODO: add mutex
-extern char _end[]; /* _end is set in the linker command file */
+#include <stddef.h>
+#include <errno.h>
 
-char *heap_ptr = _end;
+extern char _end[];
+static char *curbrk = _end;
 
-/*
- * sbrk -- changes heap size size. Get nbytes more
- *         RAM. We just increment a pointer in what's
- *         left of memory on the board.
- */
-char *_sbrk(nbytes)
-int nbytes;
+void *_sbrk(ptrdiff_t incr)
 {
-  char *base;
+    extern char __heap_end[];
+    char *newbrk;
+    char *oldbrk;
 
-  base = heap_ptr;
-  heap_ptr += nbytes;
+    oldbrk = curbrk;
+    newbrk = oldbrk + incr;
+    if ((newbrk < _end) || (newbrk >= __heap_end)) {
+        errno = ENOMEM;
+        return (void *)(-1);
+    }
 
-  return base;
+    curbrk = newbrk;
+    return oldbrk;
 }
+

@@ -2,6 +2,7 @@
 #include <dramfs/dramfs_fs.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 
 int _fstat(int file, struct stat *st) {
   if (file == STDOUT_FILENO || file == STDERR_FILENO) {
@@ -15,6 +16,7 @@ int _fstat(int file, struct stat *st) {
   }
 
   if (dramfs_check_fd(file) < 0) {
+    errno = EBADF;
     return -1;
   }
 
